@@ -17,14 +17,13 @@ namespace KtitsInfo.Models
         {
         }
 
-        public virtual DbSet<Couple> Couples { get; set; }
-        public virtual DbSet<Day> Days { get; set; }
-        public virtual DbSet<Group> Groups { get; set; }
-        public virtual DbSet<Lesson> Lessons { get; set; }
-        public virtual DbSet<LessonsShedule> LessonsShedules { get; set; }
-        public virtual DbSet<Role> Roles { get; set; }
-        public virtual DbSet<User> Users { get; set; }
-        public virtual DbSet<UserRole> UserRoles { get; set; }
+        public virtual DbSet<AspNetRole> AspNetRoles { get; set; }
+        public virtual DbSet<AspNetRoleClaim> AspNetRoleClaims { get; set; }
+        public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
+        public virtual DbSet<AspNetUserClaim> AspNetUserClaims { get; set; }
+        public virtual DbSet<AspNetUserLogin> AspNetUserLogins { get; set; }
+        public virtual DbSet<AspNetUserRole> AspNetUserRoles { get; set; }
+        public virtual DbSet<AspNetUserToken> AspNetUserTokens { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -39,122 +38,99 @@ namespace KtitsInfo.Models
         {
             modelBuilder.HasAnnotation("Relational:Collation", "Cyrillic_General_CI_AS");
 
-            modelBuilder.Entity<Couple>(entity =>
+            modelBuilder.Entity<AspNetRole>(entity =>
             {
-                entity.ToTable("Couple");
+                entity.HasIndex(e => e.NormalizedName, "RoleNameIndex")
+                    .IsUnique()
+                    .HasFilter("([NormalizedName] IS NOT NULL)");
 
-                entity.Property(e => e.EndTime).HasColumnType("datetime");
+                entity.Property(e => e.Name).HasMaxLength(256);
 
-                entity.Property(e => e.TimeStart).HasColumnType("datetime");
-
-                entity.HasOne(d => d.Day)
-                    .WithMany(p => p.Couples)
-                    .HasForeignKey(d => d.DayId)
-                    .HasConstraintName("FK_Couple_Day");
+                entity.Property(e => e.NormalizedName).HasMaxLength(256);
             });
 
-            modelBuilder.Entity<Day>(entity =>
+            modelBuilder.Entity<AspNetRoleClaim>(entity =>
             {
-                entity.ToTable("Day");
+                entity.HasIndex(e => e.RoleId, "IX_AspNetRoleClaims_RoleId");
 
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Group>(entity =>
-            {
-                entity.ToTable("Group");
-
-                entity.Property(e => e.Specialization)
-                    .IsRequired()
-                    .HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<Lesson>(entity =>
-            {
-                entity.ToTable("Lesson");
-
-                entity.Property(e => e.Description).HasMaxLength(500);
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.HasOne(d => d.User)
-                    .WithMany(p => p.Lessons)
-                    .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Lesson_User");
-            });
-
-            modelBuilder.Entity<LessonsShedule>(entity =>
-            {
-                entity.ToTable("LessonsShedule");
-
-                entity.HasOne(d => d.Couple)
-                    .WithMany(p => p.LessonsShedules)
-                    .HasForeignKey(d => d.CoupleId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_LessonsShedule_Couple");
-
-                entity.HasOne(d => d.Lesson)
-                    .WithMany(p => p.LessonsShedules)
-                    .HasForeignKey(d => d.LessonId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_LessonsShedule_Lesson");
-            });
-
-            modelBuilder.Entity<Role>(entity =>
-            {
-                entity.ToTable("Role");
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(50);
-            });
-
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.ToTable("User");
-
-                entity.Property(e => e.Email)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.Password)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.Surname)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.HasOne(d => d.Group)
-                    .WithMany(p => p.Users)
-                    .HasForeignKey(d => d.GroupId)
-                    .HasConstraintName("FK_User_Group");
-            });
-
-            modelBuilder.Entity<UserRole>(entity =>
-            {
-                entity.ToTable("UserRole");
+                entity.Property(e => e.RoleId).IsRequired();
 
                 entity.HasOne(d => d.Role)
-                    .WithMany(p => p.UserRoles)
-                    .HasForeignKey(d => d.RoleId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_UserRole_Role");
+                    .WithMany(p => p.AspNetRoleClaims)
+                    .HasForeignKey(d => d.RoleId);
+            });
+
+            modelBuilder.Entity<AspNetUser>(entity =>
+            {
+                entity.HasIndex(e => e.NormalizedEmail, "EmailIndex");
+
+                entity.HasIndex(e => e.NormalizedUserName, "UserNameIndex")
+                    .IsUnique()
+                    .HasFilter("([NormalizedUserName] IS NOT NULL)");
+
+                entity.Property(e => e.Email).HasMaxLength(256);
+
+                entity.Property(e => e.NormalizedEmail).HasMaxLength(256);
+
+                entity.Property(e => e.NormalizedUserName).HasMaxLength(256);
+
+                entity.Property(e => e.UserName).HasMaxLength(256);
+            });
+
+            modelBuilder.Entity<AspNetUserClaim>(entity =>
+            {
+                entity.HasIndex(e => e.UserId, "IX_AspNetUserClaims_UserId");
+
+                entity.Property(e => e.UserId).IsRequired();
 
                 entity.HasOne(d => d.User)
-                    .WithMany(p => p.UserRoles)
-                    .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_UserRole_User");
+                    .WithMany(p => p.AspNetUserClaims)
+                    .HasForeignKey(d => d.UserId);
+            });
+
+            modelBuilder.Entity<AspNetUserLogin>(entity =>
+            {
+                entity.HasKey(e => new { e.LoginProvider, e.ProviderKey });
+
+                entity.HasIndex(e => e.UserId, "IX_AspNetUserLogins_UserId");
+
+                entity.Property(e => e.LoginProvider).HasMaxLength(128);
+
+                entity.Property(e => e.ProviderKey).HasMaxLength(128);
+
+                entity.Property(e => e.UserId).IsRequired();
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.AspNetUserLogins)
+                    .HasForeignKey(d => d.UserId);
+            });
+
+            modelBuilder.Entity<AspNetUserRole>(entity =>
+            {
+                entity.HasKey(e => new { e.UserId, e.RoleId });
+
+                entity.HasIndex(e => e.RoleId, "IX_AspNetUserRoles_RoleId");
+
+                entity.HasOne(d => d.Role)
+                    .WithMany(p => p.AspNetUserRoles)
+                    .HasForeignKey(d => d.RoleId);
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.AspNetUserRoles)
+                    .HasForeignKey(d => d.UserId);
+            });
+
+            modelBuilder.Entity<AspNetUserToken>(entity =>
+            {
+                entity.HasKey(e => new { e.UserId, e.LoginProvider, e.Name });
+
+                entity.Property(e => e.LoginProvider).HasMaxLength(128);
+
+                entity.Property(e => e.Name).HasMaxLength(128);
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.AspNetUserTokens)
+                    .HasForeignKey(d => d.UserId);
             });
 
             OnModelCreatingPartial(modelBuilder);
